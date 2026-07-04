@@ -442,33 +442,7 @@ Assert used for security check
 
 ---
 
-## Screenshots
 
-Add screenshots after uploading the project.
-
-Suggested folder:
-
-```text
-assets/
-```
-
-Suggested screenshots:
-
-```text
-assets/dashboard-light.png
-assets/dashboard-dark.png
-assets/mobile-view.png
-assets/export-report.png
-assets/upload-scan.png
-```
-
-Example Markdown:
-
-```markdown
-![Dashboard](assets/dashboard-light.png)
-![Dark Mode](assets/dashboard-dark.png)
-![Mobile View](assets/mobile-view.png)
-```
 
 ---
 
