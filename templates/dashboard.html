@@ -1,0 +1,663 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Secure Code Scanner Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="/static/style.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <div class="brand-box">
+            <div class="brand-logo">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+
+            <div class="brand-text">
+              <h3>SecureScan</h3>
+              <p>AppSec Tool</p>
+            </div>
+          </div>
+
+          <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fa-solid fa-chevron-left close-icon"></i>
+            <i class="fa-solid fa-bars open-icon"></i>
+          </button>
+        </div>
+
+        <div class="sidebar-section-title">Overview</div>
+
+        <nav class="sidebar-menu">
+          <a class="active" href="#dashboard">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Dashboard</span>
+          </a>
+
+          <a href="#scan-area">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Scan</span>
+          </a>
+
+          <a href="#scan-history">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>History</span>
+          </a>
+
+          <a href="#scan-results">
+            <i class="fa-solid fa-file-shield"></i>
+            <span>Reports</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section-title">Security Tools</div>
+
+        <nav class="sidebar-menu">
+          <a href="#scan-results">
+            <i class="fa-solid fa-bug"></i>
+            <span>Bandit</span>
+          </a>
+
+          <a href="#scan-results">
+            <i class="fa-solid fa-code"></i>
+            <span>Semgrep</span>
+          </a>
+
+          <a href="#scan-history">
+            <i class="fa-solid fa-database"></i>
+            <span>Database</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button class="theme-toggle" id="themeToggle">
+            <i class="fa-solid fa-moon"></i>
+            <span>Dark Mode</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="container">
+          {% if alert_message %}
+          <div class="alert-box {{ alert_type }}">
+            {% if alert_type == "success" %}
+            <i class="fa-solid fa-circle-check"></i>
+            {% elif alert_type == "error" %}
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {% else %}
+            <i class="fa-solid fa-circle-info"></i>
+            {% endif %}
+
+            <span>{{ alert_message }}</span>
+          </div>
+          {% endif %}
+          <!-- Header -->
+          <div class="top-header" id="dashboard">
+            <div class="logo-section">
+              <div class="shield">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+
+              <div>
+                <h1>Secure Code Scanner</h1>
+                <p>Automated Application Security Dashboard</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="cards">
+            <div class="card">
+              <div class="card-icon">
+                <i class="fa-solid fa-folder-open"></i>
+              </div>
+              <h2>{{ total_scans }}</h2>
+              <p>Total Scans</p>
+            </div>
+
+            <div class="card risk-card {{ risk_class }}">
+              <div class="card-icon">
+                <i class="fa-solid fa-gauge-high"></i>
+              </div>
+              <h2>{{ risk_score }}</h2>
+              <p>{{ risk_status }}</p>
+            </div>
+
+            <div class="card critical">
+              <div class="card-icon">
+                <i class="fa-solid fa-circle-exclamation"></i>
+              </div>
+              <h2>{{ critical }}</h2>
+              <p>Critical</p>
+            </div>
+
+            <div class="card high">
+              <div class="card-icon">
+                <i class="fa-solid fa-fire"></i>
+              </div>
+              <h2>{{ high }}</h2>
+              <p>High</p>
+            </div>
+
+            <div class="card medium">
+              <div class="card-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <h2>{{ medium }}</h2>
+              <p>Medium</p>
+            </div>
+
+            <div class="card low">
+              <div class="card-icon">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <h2>{{ low }}</h2>
+              <p>Low</p>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts">
+            <div class="chart-card">
+              <div class="chart-header">
+                <h2>Severity Distribution</h2>
+                <p>Latest scan vulnerability breakdown</p>
+              </div>
+
+              <div class="chart-wrapper">
+                <canvas id="severityChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-header">
+                <h2>Recent Scan Trend</h2>
+                <p>Total vulnerabilities across recent scans</p>
+              </div>
+
+              <div class="chart-wrapper">
+                <canvas id="historyChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scan Button -->
+          <div class="scan-container" id="scan-area">
+            <a class="scan-btn" href="/scan">
+              <i class="fa-solid fa-play"></i>
+              Start Sample Scan
+            </a>
+
+            <form
+              class="upload-form"
+              action="/upload"
+              method="post"
+              enctype="multipart/form-data"
+            >
+              <label class="upload-btn">
+                <input
+                  class="upload-input"
+                  type="file"
+                  name="file"
+                  accept=".py"
+                  required
+                  onchange="this.form.submit()"
+                />
+                <i class="fa-solid fa-upload"></i>
+                Upload & Scan
+              </label>
+            </form>
+
+            <div class="export-dropdown">
+              <button class="export-main-btn" id="exportDropdownBtn">
+                <i class="fa-solid fa-download"></i>
+                Export
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+
+              <div class="export-menu" id="exportMenu">
+                <a href="/export/csv">
+                  <i class="fa-solid fa-file-csv"></i>
+                  CSV Report
+                </a>
+
+                <a href="/export/json">
+                  <i class="fa-solid fa-code"></i>
+                  JSON Report
+                </a>
+
+                <a href="/export/pdf">
+                  <i class="fa-solid fa-file-pdf"></i>
+                  PDF Report
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Scan Results -->
+          <div class="table-section" id="scan-results">
+            <h2>Recent Scan Results</h2>
+
+            <div class="latest-summary">
+              <span>
+                <i class="fa-solid fa-file-code"></i>
+                Target: <strong>{{ scan_target }}</strong>
+              </span>
+              <span>
+                <i class="fa-solid fa-shield-check"></i>
+                Latest scan found <strong>{{ issues | length }}</strong> issues
+              </span>
+
+              <span class="summary-high">High: {{ high }}</span>
+              <span class="summary-medium">Medium: {{ medium }}</span>
+              <span class="summary-low">Low: {{ low }}</span>
+            </div>
+
+            <div class="table-toolbar">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Search by file, issue, tool..."
+                />
+              </div>
+
+              <select id="toolFilter">
+                <option value="all">All Tools</option>
+                <option value="bandit">Bandit</option>
+                <option value="semgrep">Semgrep</option>
+              </select>
+
+              <select id="severityFilter">
+                <option value="all">All Severities</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+
+            {% if issues %}
+            <table>
+              <thead>
+                <tr>
+                  <th>Tool</th>
+                  <th>Severity</th>
+                  <th>Priority</th>
+                  <th>File</th>
+                  <th>Line</th>
+                  <th>Issue</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for issue in issues %}
+                <tr
+                  class="issue-row"
+                  data-tool="{{ issue.tool | lower }}"
+                  data-severity="{{ issue.severity | lower }}"
+                >
+                  <td>
+                    <span class="tool-badge {{ issue.tool | lower }}">
+                      {% if issue.tool == "Bandit" %}
+                      <i class="fa-solid fa-bug"></i>
+                      {% else %}
+                      <i class="fa-solid fa-code"></i>
+                      {% endif %} {{ issue.tool }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span class="badge {{ issue.severity | lower }}">
+                      {{ issue.severity }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span class="priority-badge {{ issue.priority | lower }}">
+                      {{ issue.priority }}
+                    </span>
+                  </td>
+
+                  <td>{{ issue.file }}</td>
+                  <td>{{ issue.line }}</td>
+                  <td>{{ issue.message }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <p class="no-issues">
+              No vulnerabilities found yet. Click Start Scan to begin.
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- Scan History -->
+          <div class="table-section history-section" id="scan-history">
+            <div class="section-title-row">
+              <h2>Scan History</h2>
+
+              <a class="clear-history-btn" href="/clear-history">
+                <i class="fa-solid fa-trash"></i>
+                Clear History
+              </a>
+            </div>
+
+            {% if history %}
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Time</th>
+                  <th>Total Issues</th>
+                  <th>Critical</th>
+                  <th>High</th>
+                  <th>Medium</th>
+                  <th>Low</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for scan in history %}
+                <tr>
+                  <td>{{ scan.id }}</td>
+                  <td>{{ scan.scan_time }}</td>
+                  <td>{{ scan.total_issues }}</td>
+                  <td>{{ scan.critical }}</td>
+                  <td>{{ scan.high }}</td>
+                  <td>{{ scan.medium }}</td>
+                  <td>{{ scan.low }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <p class="no-issues">No previous scans found.</p>
+            {% endif %}
+          </div>
+
+          <!-- Footer -->
+          <footer class="footer">
+            <p>Secure Code Scanner Dashboard · Version 1.0</p>
+            <span
+              >Built with FastAPI · Bandit · Semgrep · SQLite · Chart.js</span
+            >
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const critical = {{ critical }};
+      const high = {{ high }};
+      const medium = {{ medium }};
+      const low = {{ low }};
+
+      new Chart(document.getElementById("severityChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Critical", "High", "Medium", "Low"],
+          datasets: [
+            {
+              data: [critical, high, medium, low],
+              backgroundColor: [
+                "#7f1d1d",
+                "#dc2626",
+                "#f59e0b",
+                "#16a34a"
+              ],
+              borderWidth: 0,
+              hoverOffset: 8
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "68%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                usePointStyle: true,
+                padding: 18,
+                font: {
+                  size: 13,
+                  weight: "600"
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const historyLabels = [
+        {% for scan in history|reverse %}
+        "{{ scan.scan_time }}",
+        {% endfor %}
+      ];
+
+      const historyData = [
+        {% for scan in history|reverse %}
+        {{ scan.total_issues }},
+        {% endfor %}
+      ];
+
+      new Chart(document.getElementById("historyChart"), {
+        type: "line",
+        data: {
+          labels: historyLabels,
+          datasets: [
+            {
+              label: "Total Issues",
+              data: historyData,
+              tension: 0.35,
+              fill: true,
+              borderColor: "#2563eb",
+              backgroundColor: "rgba(37, 99, 235, 0.12)",
+              pointBackgroundColor: "#2563eb",
+              pointBorderColor: "#ffffff",
+              pointBorderWidth: 2,
+              pointRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                usePointStyle: true,
+                padding: 18,
+                font: {
+                  size: 13,
+                  weight: "600"
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0
+              },
+              grid: {
+                color: "#e5e7eb"
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 4
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+
+      const searchInput = document.getElementById("searchInput");
+      const toolFilter = document.getElementById("toolFilter");
+      const severityFilter = document.getElementById("severityFilter");
+
+      function filterIssues() {
+        const searchValue = searchInput.value.toLowerCase();
+        const selectedTool = toolFilter.value;
+        const selectedSeverity = severityFilter.value;
+
+        const rows = document.querySelectorAll(".issue-row");
+
+        rows.forEach((row) => {
+          const rowText = row.innerText.toLowerCase();
+          const rowTool = row.dataset.tool;
+          const rowSeverity = row.dataset.severity;
+
+          const matchesSearch = rowText.includes(searchValue);
+          const matchesTool = selectedTool === "all" || rowTool === selectedTool;
+          const matchesSeverity =
+            selectedSeverity === "all" || rowSeverity === selectedSeverity;
+
+          row.style.display =
+            matchesSearch && matchesTool && matchesSeverity ? "" : "none";
+        });
+      }
+
+      if (searchInput && toolFilter && severityFilter) {
+        searchInput.addEventListener("input", filterIssues);
+        toolFilter.addEventListener("change", filterIssues);
+        severityFilter.addEventListener("change", filterIssues);
+      }
+
+      const sidebarToggle = document.getElementById("sidebarToggle");
+      const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+      const sidebarOverlay = document.getElementById("sidebarOverlay");
+      const layout = document.querySelector(".layout");
+
+      function isMobileScreen() {
+        return window.innerWidth <= 768;
+      }
+
+      if (sidebarToggle && layout) {
+        sidebarToggle.addEventListener("click", () => {
+          if (isMobileScreen()) {
+            layout.classList.remove("mobile-sidebar-open");
+          } else {
+            layout.classList.toggle("sidebar-collapsed");
+          }
+        });
+      }
+
+      if (mobileMenuBtn && layout) {
+        mobileMenuBtn.addEventListener("click", () => {
+          layout.classList.add("mobile-sidebar-open");
+        });
+      }
+
+      if (sidebarOverlay && layout) {
+        sidebarOverlay.addEventListener("click", () => {
+          layout.classList.remove("mobile-sidebar-open");
+        });
+      }
+
+      document.querySelectorAll(".sidebar-menu a").forEach((link) => {
+        link.addEventListener("click", () => {
+          if (isMobileScreen()) {
+            layout.classList.remove("mobile-sidebar-open");
+          }
+        });
+      });
+
+      const themeToggle = document.getElementById("themeToggle");
+      const body = document.body;
+
+      function updateThemeButton() {
+        if (!themeToggle) return;
+
+        if (body.classList.contains("dark-theme")) {
+          themeToggle.innerHTML = `
+            <i class="fa-solid fa-sun"></i>
+            <span>Light Mode</span>
+          `;
+        } else {
+          themeToggle.innerHTML = `
+            <i class="fa-solid fa-moon"></i>
+            <span>Dark Mode</span>
+          `;
+        }
+      }
+
+      if (localStorage.getItem("theme") === "dark") {
+        body.classList.add("dark-theme");
+      }
+
+      updateThemeButton();
+
+      if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+          body.classList.toggle("dark-theme");
+
+          if (body.classList.contains("dark-theme")) {
+            localStorage.setItem("theme", "dark");
+          } else {
+            localStorage.setItem("theme", "light");
+          }
+
+          updateThemeButton();
+        });
+      }
+
+      const exportDropdownBtn = document.getElementById("exportDropdownBtn");
+      const exportMenu = document.getElementById("exportMenu");
+
+      if (exportDropdownBtn && exportMenu) {
+        exportDropdownBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          exportMenu.classList.toggle("show");
+        });
+
+        document.addEventListener("click", (event) => {
+          if (
+            !exportDropdownBtn.contains(event.target) &&
+            !exportMenu.contains(event.target)
+          ) {
+            exportMenu.classList.remove("show");
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+jinja2
+bandit
+semgrep
+reportlab
+requests
+pyyaml
+flask
+python-multipart

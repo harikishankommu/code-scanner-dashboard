@@ -1,0 +1,60 @@
+name: Security Scan CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+    branches:
+      - main
+      - master
+
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    name: Bandit and Semgrep Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit semgrep
+
+      - name: Create reports folder
+        run: mkdir -p security-reports
+
+      - name: Run Bandit scan
+        run: |
+          bandit -r . \
+            -x ./venv,./sample_project,./uploads,./__pycache__ \
+            -f json \
+            -o security-reports/bandit-report.json || true
+
+      - name: Run Semgrep scan
+        run: |
+          semgrep scan \
+            --config p/python \
+            --json \
+            --output security-reports/semgrep-report.json \
+            --exclude sample_project \
+            --exclude uploads \
+            --exclude venv \
+            .
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-reports
+          path: security-reports/
